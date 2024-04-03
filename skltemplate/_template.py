@@ -3,12 +3,13 @@ This is a module to be used as a reference for building other modules
 """
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
+from sklearn.linear_model import Ridge
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances
 
 
-class TemplateEstimator(BaseEstimator):
+class ReducedRankRegression(Ridge):
     """ A template estimator to be used as a reference implementation.
 
     For more information regarding how to build your own estimator, read more
@@ -29,46 +30,47 @@ class TemplateEstimator(BaseEstimator):
     >>> estimator.fit(X, y)
     TemplateEstimator()
     """
-    def __init__(self, demo_param='demo_param'):
-        self.demo_param = demo_param
+    def __init__(self, alpha=1.0, *, fit_intercept=True, copy_X=True, max_iter=None, tol=0.0001, solver='auto', positive=False, random_state=None):
+        #self.demo_param = demo_param
+        super().__init__(alpha=1.0, fit_intercept=True, copy_X=True, max_iter=None, tol=0.0001, solver='auto', positive=False, random_state=None)
 
-    def fit(self, X, y):
-        """A reference implementation of a fitting function.
+    #def fit(self, X, y):
+    #    """A reference implementation of a fitting function.
 
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape (n_samples, n_features)
-            The training input samples.
-        y : array-like, shape (n_samples,) or (n_samples, n_outputs)
-            The target values (class labels in classification, real numbers in
-            regression).
+    #    Parameters
+    #    ----------
+    #    X : {array-like, sparse matrix}, shape (n_samples, n_features)
+    #        The training input samples.
+    #    y : array-like, shape (n_samples,) or (n_samples, n_outputs)
+    #        The target values (class labels in classification, real numbers in
+    #        regression).
 
-        Returns
-        -------
-        self : object
-            Returns self.
-        """
-        X, y = check_X_y(X, y, accept_sparse=True)
-        self.is_fitted_ = True
-        # `fit` should always return `self`
-        return self
+    #    Returns
+    #    -------
+    #    self : object
+    #        Returns self.
+    #    """
+    #    X, y = check_X_y(X, y, accept_sparse=True)
+    #    self.is_fitted_ = True
+    #    # `fit` should always return `self`
+    #    return self
 
-    def predict(self, X):
-        """ A reference implementation of a predicting function.
+    #def predict(self, X):
+    #    """ A reference implementation of a predicting function.
 
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape (n_samples, n_features)
-            The training input samples.
+    #    Parameters
+    #    ----------
+    #    X : {array-like, sparse matrix}, shape (n_samples, n_features)
+    #        The training input samples.
 
-        Returns
-        -------
-        y : ndarray, shape (n_samples,)
-            Returns an array of ones.
-        """
-        X = check_array(X, accept_sparse=True)
-        check_is_fitted(self, 'is_fitted_')
-        return np.ones(X.shape[0], dtype=np.int64)
+    #    Returns
+    #    -------
+    #    y : ndarray, shape (n_samples,)
+    #        Returns an array of ones.
+    #    """
+    #    X = check_array(X, accept_sparse=True)
+    #    check_is_fitted(self, 'is_fitted_')
+    #    return np.ones(X.shape[0], dtype=np.int64)
 
 
 class TemplateClassifier(ClassifierMixin, BaseEstimator):
