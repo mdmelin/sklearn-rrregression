@@ -1,9 +1,11 @@
 """
 This is a module to be used as a reference for building other modules
 """
+from random import sample
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.linear_model import Ridge
+from sklearn.decomposition import PCA
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances
@@ -30,30 +32,64 @@ class ReducedRankRegression(Ridge):
     >>> estimator.fit(X, y)
     TemplateEstimator()
     """
-    def __init__(self, alpha=1.0, *, fit_intercept=True, copy_X=True, max_iter=None, tol=0.0001, solver='auto', positive=False, random_state=None):
-        #self.demo_param = demo_param
-        super().__init__(alpha=1.0, fit_intercept=True, copy_X=True, max_iter=None, tol=0.0001, solver='auto', positive=False, random_state=None)
+    from sklearn.decomposition import PCA
 
-    #def fit(self, X, y):
-    #    """A reference implementation of a fitting function.
+    #def __init__(self, rank='full', # default full rank
+    #             alpha=0, # default no regularization
+    #             *, 
+    #             fit_intercept=True,
+    #             copy_X=True, 
+    #             max_iter=None,
+    #             tol=0.0001,
+    #             solver='auto',
+    #             positive=False,
+    #             random_state=None):
 
-    #    Parameters
-    #    ----------
-    #    X : {array-like, sparse matrix}, shape (n_samples, n_features)
-    #        The training input samples.
-    #    y : array-like, shape (n_samples,) or (n_samples, n_outputs)
-    #        The target values (class labels in classification, real numbers in
-    #        regression).
+    def __init__(self, rank='full', ridge_params_dict=None): # default full rank
+        if ridge_params_dict is None:
+            ridge_params_dict = dict(alpha=0,) # default no regularization - equivlent to OLS
+                                     #fit_intercept=fit_intercept)  # expose this parameter
 
-    #    Returns
-    #    -------
-    #    self : object
-    #        Returns self.
-    #    """
-    #    X, y = check_X_y(X, y, accept_sparse=True)
-    #    self.is_fitted_ = True
-    #    # `fit` should always return `self`
-    #    return self
+        super().__init__(**ridge_params_dict)
+        self.ridge_params_dict = ridge_params_dict
+        self.rank = rank #TODO: handle logic for rank between 0 and 1, explain the proper amount of variance
+
+    def fit(self, X, y, sample_weight=None):
+        """A reference implementation of a fitting function.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape (n_samples, n_features)
+            The training input samples.
+        y : array-like, shape (n_samples,) or (n_samples, n_outputs)
+            The target values (class labels in classification, real numbers in
+            regression).
+
+        Returns
+        -------
+        self : object
+            Returns self.
+        """
+        if self.rank == 'full':
+            rank = X.shape[1] #TODO: check this
+        elif self.rank >= 1: #TODO: handle rank between 0 and 1
+            assert isinstance(self.rank, int), "if rank >= 0, it must be an integer"
+            rank = self.rank 
+
+        b_ridge = super().fit(X, y, sample_weight=sample_weight).coef_.T # TODO: get self here or no? 
+        #b_ridge = self.coef_
+        y_hat_ridge = super().predict(X) 
+        pca = PCA(n_components=rank)
+        pca.fit(y_hat_ridge)
+        b_proj = b_ridge @ pca.components_.T # the encoding matrix (projects predictors from full space to space spanned by first n ranks)
+        b_rrr = b_proj @ pca.components_ # the reconstituted reduced rank regression matrix (same size as b_ridge)
+
+        self.coef_ = b_rrr.T
+        self.encoder_ = b_proj
+        self.decoder_ = pca.components_
+        #y_hat = X @ b_rrr
+        #y_hat = X @ b_proj @ pca.components_
+        return self
 
     #def predict(self, X):
     #    """ A reference implementation of a predicting function.
